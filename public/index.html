@@ -24,7 +24,16 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>React App</title>
+    <title>Web3 Contract UI</title>
+    <script>
+      window.addEventListener('load', function() {
+        if (typeof window.ethereum !== 'undefined') {
+          console.log('MetaMask is installed!');
+        } else {
+          console.log('MetaMask is not installed.');
+        }
+      });
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

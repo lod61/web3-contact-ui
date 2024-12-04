@@ -144,6 +144,12 @@ const ContractInteractor: React.FC = () => {
   const handleError = useCallback((error: Error | unknown, title = '错误') => {
     console.error(error);
     const message = error instanceof Error ? error.message : '未知错误';
+    
+    // 特殊处理 MetaMask 相关错误
+    if (message.includes('MetaMask') || message.includes('ethereum')) {
+      window.open('https://metamask.io/download.html', '_blank');
+    }
+    
     setError(message);
     toast({
       title,

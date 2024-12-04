@@ -74,8 +74,15 @@ export const getEthereumProvider = (): EthereumProvider => {
   }
 
   const ethereum = window.ethereum;
-  if (!ethereum || !ethereum.selectedAddress) {
-    throw new Web3Error('请安装 MetaMask', 'PROVIDER_NOT_FOUND');
+  if (!ethereum) {
+    if (typeof window.web3 === 'undefined') {
+      window.open('https://metamask.io/download.html', '_blank');
+      throw new Web3Error('请安装并解锁 MetaMask', 'PROVIDER_NOT_FOUND');
+    }
+  }
+
+  if (!ethereum.isConnected?.()) {
+    throw new Web3Error('请解锁 MetaMask', 'WALLET_LOCKED');
   }
 
   return ethereum;
@@ -89,28 +96,28 @@ export const connectWallet = async (): Promise<{
 }> => {
   try {
     const ethereum = getEthereumProvider();
+
     const accounts = await ethereum.request({
-      method: 'eth_requestAccounts',
-    });
+      method: 'eth_requestAccounts'
+    }) as string[];
 
     if (!accounts || accounts.length === 0) {
-      throw new Web3Error('未找到账户', 'NO_ACCOUNTS');
+      throw new Web3Error('未能获取账户', 'NO_ACCOUNTS');
     }
 
-    const currentAccount = accounts[0];
     const provider = new ethers.BrowserProvider(ethereum);
     const signer = await provider.getSigner();
-
-    return { provider, signer, currentAccount };
+    
+    return {
+      provider,
+      signer,
+      currentAccount: accounts[0]
+    };
   } catch (error) {
-    if (error instanceof Web3Error) {
-      throw error;
+    if (error instanceof Error) {
+      throw new Web3Error(error.message, 'CONNECT_ERROR');
     }
-    throw new Web3Error(
-      '连接钱包失败',
-      'CONNECT_ERROR',
-      error instanceof Error ? error.message : '未知错误'
-    );
+    throw new Web3Error('连接钱包失败', 'UNKNOWN_ERROR');
   }
 };
 
