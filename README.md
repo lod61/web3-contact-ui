@@ -1,46 +1,58 @@
-# Getting Started with Create React App
+# Web3 合约 UI
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+该项目是一个用于与以太坊智能合约交互的网页界面。它允许用户连接他们的 MetaMask 钱包，签署消息，在以太坊兼容链之间切换，并通过提供 ABI 和地址与智能合约进行交互。
 
-## Available Scripts
+## 功能
 
-In the project directory, you can run:
+- **连接钱包**：使用 MetaMask 连接您的以太坊钱包。
+- **签署消息**：使用您的钱包签署任意消息。
+- **切换链**：在以太坊兼容链之间切换（例如，以太坊主网，Ropsten 等）。
+- **与合约交互**：输入合约 ABI 和地址，以动态生成用于与合约交互的 UI。
 
-### `npm start`
+## 入门指南
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+该项目使用 [Create React App](https://github.com/facebook/create-react-app) 引导创建。
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### 可用脚本
 
-### `npm test`
+在项目目录中，您可以运行：
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+#### `npm start`
 
-### `npm run build`
+在开发模式下运行应用程序。\
+打开 [http://localhost:3000](http://localhost:3000) 在浏览器中查看。
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+如果您进行编辑，页面将重新加载。\
+您还将在控制台中看到任何 lint 错误。
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+#### `npm test`
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+以交互式监视模式启动测试运行器。\
+有关更多信息，请参阅关于 [运行测试](https://facebook.github.io/create-react-app/docs/running-tests) 的部分。
 
-### `npm run eject`
+#### `npm run build`
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+将应用程序构建为生产环境的 `build` 文件夹。\
+它在生产模式下正确打包 React，并优化构建以获得最佳性能。
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+构建被缩小，文件名包括哈希。\
+您的应用程序已准备好部署！
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+有关更多信息，请参阅关于 [部署](https://facebook.github.io/create-react-app/docs/deployment) 的部分。
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## 设置说明
 
-## Learn More
+1. 克隆存储库。
+2. 运行 `npm install` 以安装依赖项。
+3. 使用 `npm start` 启动开发服务器。
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 依赖项
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- React
+- Chakra UI
+- Ethers.js
+- MetaMask
+
+## 注意
+
+确保在您的浏览器中安装 MetaMask 以使用钱包功能。
