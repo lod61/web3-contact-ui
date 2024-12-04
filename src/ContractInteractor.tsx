@@ -119,6 +119,20 @@ const SAMPLE_ABI = JSON.stringify([
   }
 ], null, 2);
 
+// 只保留纯工具函数在组件外部
+const validateAndConvertParam = async (type: string, value: string): Promise<unknown> => {
+  if (!value.trim()) {
+    throw new Error('参数不能为空');
+  }
+
+  try {
+    return convertValue(type, value.trim());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '未知错误';
+    throw new Error(`参数格式错误: ${message}`);
+  }
+};
+
 const ContractInteractor: React.FC = () => {
   const [provider, setProvider] = useState<ContractState['provider']>(null);
   const [signer, setSigner] = useState<ContractState['signer']>(null);
@@ -182,7 +196,7 @@ const ContractInteractor: React.FC = () => {
     }
   }, []);
 
-  // 辅助函数：验证并解析 ABI
+  // 辅助函数���验证并解析 ABI
   const validateAndParseAbi = useCallback((abiString: string) => {
     try {
       // 检查输入是否为空
@@ -390,103 +404,6 @@ const ContractInteractor: React.FC = () => {
     }
   }, [toast, handleError]);
 
-  // 拆分 callContractMethod 函数
-  const handleTransactionResult = async (
-    result: ethers.ContractTransactionResponse,
-    functionName: string,
-    params: unknown[]
-  ): Promise<ContractCallResult> => {
-    setPendingTx(result.hash);
-    const receipt = await result.wait();
-    setPendingTx(null);
-
-    if (!receipt) {
-      throw new Error('交易回执为空');
-    }
-    
-    const txRecord: Transaction = {
-      functionName,
-      params,
-      txHash: receipt.hash,
-      status: receipt.status === 1 ? 'success' : 'failed',
-      timestamp: new Date().toISOString(),
-      receipt: receipt
-    };
-    
-    setTransactions(prev => [txRecord, ...prev]);
-    return {
-      success: receipt.status === 1,
-      txHash: receipt.hash,
-      data: receipt.status === 1 ? '交易成功' : '交易失败'
-    };
-  };
-
-  const callContractMethod = useCallback(async () => {
-    if (!contract || !selectedFunction) return;
-    
-    setIsLoading(true);
-    setError(null);
-    setLastCallResult(null);
-    
-    try {
-      const validatedParams = await validateParams(selectedFunction, functionParams);
-      const method = contract[selectedFunction.name];
-      const result = await method(...validatedParams);
-
-      if (typeof result.wait === 'function') {
-        setLastCallResult(
-          await handleTransactionResult(result, selectedFunction.name, validatedParams)
-        );
-      } else {
-        setLastCallResult({
-          success: true,
-          data: result
-        });
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '未知错误';
-      setLastCallResult({
-        success: false,
-        error: errorMessage
-      });
-      handleError(error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [contract, selectedFunction, functionParams, handleError]);
-
-  // 添加参数验证函数
-  const validateAndConvertParam = async (type: string, value: string): Promise<unknown> => {
-    if (!value.trim()) {
-      throw new Error('参数不能为空');
-    }
-
-    try {
-      return convertValue(type, value.trim());
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '未知错误';
-      throw new Error(`参数格式错误: ${message}`);
-    }
-  };
-
-  // 修改 validateParams 函数
-  const validateParams = async (
-    selectedFunction: AbiEntry,
-    params: string[]
-  ): Promise<unknown[]> => {
-    return Promise.all(
-      params.map(async (param, index) => {
-        const input = selectedFunction.inputs[index];
-        try {
-          return await validateAndConvertParam(input.type, param);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : '未知错误';
-          throw new Error(`参数 ${input.name || index + 1} (${input.type}) 验证失败: ${message}`);
-        }
-      })
-    );
-  };
-
   useEffect(() => {
     // 监听网络变化
     if (provider) {
@@ -544,6 +461,98 @@ const ContractInteractor: React.FC = () => {
   });
 
   TransactionItem.displayName = 'TransactionItem';
+
+  // 1. validateParams 移到组件内部
+  const validateParams = useCallback(async (
+    selectedFunction: AbiEntry,
+    params: string[]
+  ): Promise<unknown[]> => {
+    return Promise.all(
+      params.map(async (param, index) => {
+        const input = selectedFunction.inputs[index];
+        try {
+          return await validateAndConvertParam(input.type, param);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : '未知错误';
+          throw new Error(`参数 ${input.name || index + 1} (${input.type}) 验证失败: ${message}`);
+        }
+      })
+    );
+  }, []);
+
+  // 2. handleTransactionResult 移到组件内部
+  const handleTransactionResult = useCallback(async (
+    result: ethers.ContractTransactionResponse,
+    functionName: string,
+    params: unknown[]
+  ): Promise<ContractCallResult> => {
+    setPendingTx(result.hash);
+    const receipt = await result.wait();
+    setPendingTx(null);
+
+    if (!receipt) {
+      throw new Error('交易回执为空');
+    }
+    
+    const txRecord: Transaction = {
+      functionName,
+      params,
+      txHash: receipt.hash,
+      status: receipt.status === 1 ? 'success' : 'failed',
+      timestamp: new Date().toISOString(),
+      receipt: receipt
+    };
+    
+    setTransactions(prev => [txRecord, ...prev]);
+    return {
+      success: receipt.status === 1,
+      txHash: receipt.hash,
+      data: receipt.status === 1 ? '交易成功' : '交易失败'
+    };
+  }, []);
+
+  // 3. callContractMethod 移到组件内部
+  const callContractMethod = useCallback(async () => {
+    if (!contract || !selectedFunction) return;
+    
+    setIsLoading(true);
+    setError(null);
+    setLastCallResult(null);
+    
+    try {
+      const validatedParams = await validateParams(selectedFunction, functionParams);
+      const method = contract[selectedFunction.name];
+      const result = await method(...validatedParams);
+
+      if (typeof result.wait === 'function') {
+        setLastCallResult(
+          await handleTransactionResult(result, selectedFunction.name, validatedParams)
+        );
+      } else {
+        setLastCallResult({
+          success: true,
+          data: result
+        });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      setLastCallResult({
+        success: false,
+        error: errorMessage
+      });
+      handleError(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    contract, 
+    selectedFunction, 
+    functionParams, 
+    handleError, 
+    validateParams, 
+    handleTransactionResult,
+    setLastCallResult
+  ]);
 
   return (
     <ChakraProvider>

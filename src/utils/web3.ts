@@ -75,17 +75,17 @@ export const getEthereumProvider = (): EthereumProvider => {
 
   const ethereum = window.ethereum;
   if (!ethereum) {
-    if (typeof window.web3 === 'undefined') {
-      window.open('https://metamask.io/download.html', '_blank');
-      throw new Web3Error('请安装并解锁 MetaMask', 'PROVIDER_NOT_FOUND');
-    }
+    window.open('https://metamask.io/download.html', '_blank');
+    throw new Web3Error('请安装 MetaMask', 'PROVIDER_NOT_FOUND');
   }
 
-  if (!ethereum.isConnected?.()) {
+  const provider = ethereum as EthereumProvider;
+  
+  if (!provider.isConnected?.()) {
     throw new Web3Error('请解锁 MetaMask', 'WALLET_LOCKED');
   }
 
-  return ethereum;
+  return provider;
 };
 
 // 钱包连接函数
@@ -176,10 +176,12 @@ export const getNetworkInfo = async (provider: ethers.BrowserProvider): Promise<
 // 断开钱包连接函数
 export const disconnectWallet = async (): Promise<void> => {
   const ethereum = getEthereumProvider();
+  
   // eslint-disable-next-line no-console
   const accountsCallback: AccountsChangedCallback = (accounts) => {
     console.log('账户已更改:', accounts);
   };
+  
   // eslint-disable-next-line no-console
   const chainCallback: ChainChangedCallback = (chainId) => {
     console.log('链已更改:', chainId);
