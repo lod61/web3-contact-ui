@@ -133,6 +133,49 @@ const validateAndConvertParam = async (type: string, value: string): Promise<unk
   }
 };
 
+// 工具函数移到组件外部
+const validateAbiFormat = (abiString: string): unknown => {
+  if (!abiString.trim()) {
+    throw new Error('ABI 不能为空');
+  }
+
+  try {
+    return JSON.parse(abiString);
+  } catch {
+    throw new Error('ABI JSON 格式错误');
+  }
+};
+
+interface AbiItem {
+  type: string;
+  name?: string;
+  inputs?: Array<{
+    name: string;
+    type: string;
+  }>;
+  outputs?: Array<{
+    type: string;
+  }>;
+  stateMutability?: string;
+}
+
+const validateAbiContent = (parsed: unknown): AbiItem[] => {
+  if (!Array.isArray(parsed)) {
+    throw new Error('ABI 必须是数组格式');
+  }
+  
+  if (parsed.length === 0) {
+    throw new Error('ABI 数组不能为空');
+  }
+
+  return parsed.map((item, index) => {
+    if (!item || typeof item !== 'object' || !('type' in item)) {
+      throw new Error(`ABI 项 ${index + 1} 缺少 type 字段`);
+    }
+    return item as AbiItem;
+  });
+};
+
 const ContractInteractor: React.FC = () => {
   const [provider, setProvider] = useState<ContractState['provider']>(null);
   const [signer, setSigner] = useState<ContractState['signer']>(null);
@@ -154,17 +197,28 @@ const ContractInteractor: React.FC = () => {
 
   const toast = useToast();
 
-  // 修改错误处理函数
+  // 拆分复杂的 handleError 函数
+  const resetWalletState = useCallback(() => {
+    setCurrentAccount(null);
+    setProvider(null);
+    setSigner(null);
+    setContract(null);
+    setContractFunctions([]);
+    setSelectedFunction(null);
+    setFunctionParams([]);
+  }, []);
+
+  const handleMetaMaskError = useCallback(() => {
+    resetWalletState();
+    window.open('https://metamask.io/download.html', '_blank');
+  }, [resetWalletState]);
+
   const handleError = useCallback((error: Error | unknown, title = '错误') => {
     console.error(error);
     const message = error instanceof Error ? error.message : '未知错误';
     
-    // 如果是连接错误，重置连接状态
     if (message.includes('MetaMask') || message.includes('ethereum')) {
-      setCurrentAccount(null);
-      setProvider(null);
-      setSigner(null);
-      window.open('https://metamask.io/download.html', '_blank');
+      handleMetaMaskError();
     }
     
     setError(message);
@@ -175,7 +229,7 @@ const ContractInteractor: React.FC = () => {
       duration: 5000,
       isClosable: true,
     });
-  }, [toast]);
+  }, [toast, handleMetaMaskError]);
 
   // 辅助函数：检查网络连接状态
   const checkNetworkConnection = useCallback(async () => {
@@ -196,43 +250,6 @@ const ContractInteractor: React.FC = () => {
       return ethers.getAddress(address); // 规范化地址格式
     } catch {
       throw new Error('效的合约地址');
-    }
-  }, []);
-
-  // 辅助函数验证并解析 ABI
-  const validateAndParseAbi = useCallback((abiString: string) => {
-    try {
-      // 检查输入是否为空
-      if (!abiString.trim()) {
-        throw new Error('ABI 不能为空');
-      }
-
-      // 尝试解析 JSON
-      const parsed = JSON.parse(abiString);
-      
-      // 验证是否为数组
-      if (!Array.isArray(parsed)) {
-        throw new Error('ABI 必须是数组格式');
-      }
-      
-      // 验证数组内容
-      if (parsed.length === 0) {
-        throw new Error('ABI 数组不能为空');
-      }
-
-      // 验证每个元素是否包含必要的字段
-      parsed.forEach((item, index) => {
-        if (!item.type) {
-          throw new Error(`ABI 项 ${index + 1} 缺少 type 字段`);
-        }
-      });
-
-      return parsed;
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        throw new Error('ABI JSON 格式错误，请检格式是否正确');
-      }
-      throw error;
     }
   }, []);
 
@@ -296,7 +313,7 @@ const ContractInteractor: React.FC = () => {
   // 修改连接钱包函数
   const connectWallet = useCallback(async () => {
     setIsConnecting(true);
-    setError(null); // 清除之前的错误
+    setError(null);
     
     try {
       const { provider: newProvider, signer: newSigner, currentAccount: account } = await web3.connectWallet();
@@ -325,15 +342,23 @@ const ContractInteractor: React.FC = () => {
       });
 
     } catch (error) {
-      // 连接失败时清除所有状态
-      setCurrentAccount(null);
-      setProvider(null);
-      setSigner(null);
+      resetWalletState();
       handleError(error, '连接钱包失败');
     } finally {
       setIsConnecting(false);
     }
-  }, [toast, handleError]);
+  }, [toast, handleError, resetWalletState]);
+
+  // 将 validateAndParseAbi 移到组件内部
+  const validateAndParseAbi = useCallback((abiString: string) => {
+    try {
+      const parsed = validateAbiFormat(abiString);
+      return validateAbiContent(parsed);
+    } catch (error) {
+      handleError(error);
+      return [];
+    }
+  }, [handleError]);
 
   const initializeContract = useCallback(async () => {
     if (!signer || !contractAddress || !abiJson) {
@@ -342,20 +367,18 @@ const ContractInteractor: React.FC = () => {
     }
 
     try {
-      // 解析 ABI
       const parsedAbi = validateAndParseAbi(abiJson);
-      
-      // 创建合约实例
+      if (!parsedAbi.length) return;
+
       const newContract = new ethers.Contract(
         validateContractAddress(contractAddress),
-        parsedAbi,
+        parsedAbi as ethers.InterfaceAbi,
         signer
       );
 
-      // 过滤出函数类型的 ABI 条目
       const functions = parsedAbi.filter(
-        (item: AbiEntry) => item.type === 'function'
-      );
+        (item) => item.type === 'function'
+      ) as AbiEntry[];
 
       setContract(newContract);
       setContractFunctions(functions);
@@ -370,7 +393,7 @@ const ContractInteractor: React.FC = () => {
     } catch (error) {
       handleError(error, '合约初始化失败');
     }
-  }, [signer, contractAddress, abiJson, toast, handleError, validateAndParseAbi, validateContractAddress]);
+  }, [signer, contractAddress, abiJson, toast, handleError, validateContractAddress, validateAndParseAbi]);
 
   const signMessage = useCallback(async () => {
     if (!signer) {
@@ -417,7 +440,6 @@ const ContractInteractor: React.FC = () => {
   }, [toast, handleError]);
 
   useEffect(() => {
-    // 监听网络变化
     if (provider) {
       const handleNetworkChange = async () => {
         try {
@@ -425,15 +447,13 @@ const ContractInteractor: React.FC = () => {
           setChainId(chainId as ChainId);
         } catch (error) {
           handleError(error, '网络连接错误');
+          resetWalletState();
         }
       };
       
       handleNetworkChange();
-      return () => {
-        // 清理监听器
-      };
     }
-  }, [provider, checkNetworkConnection, handleError]);
+  }, [provider, checkNetworkConnection, handleError, resetWalletState]);
 
   useEffect(() => {
     if (!provider || !contractAddress || !abiJson) return;
