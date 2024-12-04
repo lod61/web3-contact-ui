@@ -154,13 +154,16 @@ const ContractInteractor: React.FC = () => {
 
   const toast = useToast();
 
-  // 统一的错误处理函数
+  // 修改错误处理函数
   const handleError = useCallback((error: Error | unknown, title = '错误') => {
     console.error(error);
     const message = error instanceof Error ? error.message : '未知错误';
     
-    // 特殊处理 MetaMask 相关错误
+    // 如果是连接错误，重置连接状态
     if (message.includes('MetaMask') || message.includes('ethereum')) {
+      setCurrentAccount(null);
+      setProvider(null);
+      setSigner(null);
       window.open('https://metamask.io/download.html', '_blank');
     }
     
@@ -196,7 +199,7 @@ const ContractInteractor: React.FC = () => {
     }
   }, []);
 
-  // 辅助函数���验证并解析 ABI
+  // 辅助函数验证并解析 ABI
   const validateAndParseAbi = useCallback((abiString: string) => {
     try {
       // 检查输入是否为空
@@ -267,6 +270,7 @@ const ContractInteractor: React.FC = () => {
     };
   }, []);
 
+  // 修改断开连接函数
   const disconnectWallet = useCallback(async () => {
     try {
       await web3.disconnectWallet();
@@ -277,6 +281,7 @@ const ContractInteractor: React.FC = () => {
       setContractFunctions([]);
       setSelectedFunction(null);
       setFunctionParams([]);
+      setError(null); // 清除错误状态
       
       toast({
         title: '钱包已断开连接',
@@ -288,8 +293,11 @@ const ContractInteractor: React.FC = () => {
     }
   }, [toast, handleError]);
 
+  // 修改连接钱包函数
   const connectWallet = useCallback(async () => {
     setIsConnecting(true);
+    setError(null); // 清除之前的错误
+    
     try {
       const { provider: newProvider, signer: newSigner, currentAccount: account } = await web3.connectWallet();
       setProvider(newProvider);
@@ -317,11 +325,15 @@ const ContractInteractor: React.FC = () => {
       });
 
     } catch (error) {
+      // 连接失败时清除所有状态
+      setCurrentAccount(null);
+      setProvider(null);
+      setSigner(null);
       handleError(error, '连接钱包失败');
     } finally {
       setIsConnecting(false);
     }
-  }, [toast, handleError, disconnectWallet]);
+  }, [toast, handleError]);
 
   const initializeContract = useCallback(async () => {
     if (!signer || !contractAddress || !abiJson) {
