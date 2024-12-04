@@ -1,7 +1,7 @@
 {
   "name": "web3-contact-ui",
   "version": "0.1.0",
-  "homepage": ".",
+  "homepage": "https://lod61.github.io/web3-contact-ui/",
   "private": true,
   "dependencies": {
     "@chakra-ui/react": "^2.8.2",
@@ -40,12 +40,12 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "CI=false react-scripts build",
+    "build": "GENERATE_SOURCEMAP=false CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build -r https://github.com/lod61/web3-contact-ui.git",
-    "vercel-build": "CI=false npm run build"
+    "vercel-build": "GENERATE_SOURCEMAP=false CI=false npm run build"
   },
   "eslintConfig": {
     "extends": [
