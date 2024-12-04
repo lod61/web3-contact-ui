@@ -1,10 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { HashRouter as Router } from 'react-router-dom';
 import ContractInteractor from './ContractInteractor';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/">
       <ContractInteractor />
     </Router>
   );
