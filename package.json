@@ -1,7 +1,7 @@
 {
   "name": "web3-contact-ui",
   "version": "0.1.0",
-  "homepage": "https://lod61.github.io/web3-contact-ui",
+  "homepage": ".",
   "private": true,
   "dependencies": {
     "@chakra-ui/react": "^2.8.2",

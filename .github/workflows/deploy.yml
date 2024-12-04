@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -33,4 +36,4 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           npm i -g vercel
-          vercel deploy --token $VERCEL_TOKEN --prod
+          vercel deploy --token $VERCEL_TOKEN --prod --yes

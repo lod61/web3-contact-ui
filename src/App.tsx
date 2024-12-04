@@ -4,7 +4,7 @@ import ContractInteractor from './ContractInteractor';
 
 function App() {
   return (
-    <Router>
+    <Router basename={process.env.PUBLIC_URL}>
       <ContractInteractor />
     </Router>
   );
