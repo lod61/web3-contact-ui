@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/web3-contact-ui/static/css/main.2c4e29dc.css",
+    "main.js": "/web3-contact-ui/static/js/main.99d30354.js",
+    "static/js/488.4838a509.chunk.js": "/web3-contact-ui/static/js/488.4838a509.chunk.js",
+    "index.html": "/web3-contact-ui/index.html",
+    "main.2c4e29dc.css.map": "/web3-contact-ui/static/css/main.2c4e29dc.css.map",
+    "main.99d30354.js.map": "/web3-contact-ui/static/js/main.99d30354.js.map",
+    "488.4838a509.chunk.js.map": "/web3-contact-ui/static/js/488.4838a509.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.2c4e29dc.css",
+    "static/js/main.99d30354.js"
+  ]
+}
