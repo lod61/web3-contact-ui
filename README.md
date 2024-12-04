@@ -2,6 +2,11 @@
 
 该项目是一个用于与以太坊智能合约交互的网页界面。它允许用户连接他们的 MetaMask 钱包，签署消息，在以太坊兼容链之间切换，并通过提供 ABI 和地址与智能合约进行交互。
 
+## 部署状态
+
+- GitHub Pages: https://lod61.github.io/web3-contact-ui/
+- Vercel: https://web3-contract-ui.vercel.app/
+
 ## 功能
 
 - **连接钱包**：使用 MetaMask 连接您的以太坊钱包。
